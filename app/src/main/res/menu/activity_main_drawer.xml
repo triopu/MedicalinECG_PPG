@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:showIn="navigation_view">
+
+        <item
+            android:id="@+id/bt_connect"
+            android:icon="@drawable/menu_connect"
+            android:title="Connect" />
+        <item
+            android:id="@+id/record"
+            android:icon="@drawable/menu_record"
+            android:title="Record" />
+        <item
+            android:id="@+id/name_edit"
+            android:icon="@drawable/menu_edit"
+            android:title="Edit File Name" />
+
+        <item
+            android:id="@+id/process"
+            android:icon="@drawable/menu_process"
+            android:title="Process Data" />
+
+        <item
+            android:id="@+id/ecg_switch"
+            android:icon="@drawable/menu_heart"
+            android:title="ECG" />
+
+        <item
+            android:id="@+id/ppg_switch"
+            android:icon="@drawable/menu_hand"
+            android:title="PPG" />
+
+        <item
+            android:id="@+id/download"
+            android:icon="@drawable/menu_download"
+            android:title="Download" />
+
+
+</menu>
