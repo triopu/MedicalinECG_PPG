@@ -45,6 +45,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import medicalin.ekg.Photoplethysmogram.PeakPhotoplethysmogram;
@@ -112,7 +113,8 @@ public class Main extends AppCompatActivity implements NavigationView.OnNavigati
     ArrayList<Integer> data1, data2;
     ArrayList<Double> time1, time2;
 
-    double rrText, hrText, qtText;
+    double rrECG, hrECG, qtECG;
+    double rrPPG, hrPPG;
 
     int second;
     private long startTime = 0;
@@ -137,6 +139,9 @@ public class Main extends AppCompatActivity implements NavigationView.OnNavigati
 
     DatabaseReference mDatabase = FirebaseDatabase.getInstance().getReference();
     int countProcess = 0;
+
+    double max_val = 1023.000;
+    double min_val = 0.000;
 
     private void DownloadData() {
         if (download) {
@@ -201,6 +206,37 @@ public class Main extends AppCompatActivity implements NavigationView.OnNavigati
 
             Log.d("Save status: ", String.valueOf(record) + " " + String.valueOf(data1.size()) + " | " + String.valueOf(data2.size()));
 
+            if (ppgMode) {
+
+                ArrayList<Integer> dataPPGProcessed = new ArrayList<Integer>();
+                for (int l = 0; l < data2.size(); l++){
+                    dataPPGProcessed.add((int)(map((double)(data2.get(l)),min_val,max_val,100.00,500.00)));
+                }
+
+                peakPPG = new PeakPhotoplethysmogram(data2, time2);
+                annPPG = peakPPG.getAnnotation();
+                rrPPG = peakPPG.getRrAvr();
+                hrPPG = peakPPG.getHr();
+
+                Log.d("HeartRatePPG ",String.valueOf(hrPPG));
+
+                if (record){
+                    Log.d("Saving PPG", String.valueOf(time2.size()) + " | " + String.valueOf(data2.size()) + " | " + String.valueOf(annPPG.size()));
+                    for (int i = 0; i < annPPG.size(); i++) {
+                        try {
+                            printFormat = String.format("%.4f\t%d\t%d", time2.get(i), data2.get(i), annPPG.get(i));
+                            printFormat = printFormat.replace(',', '.');
+                            fw2.append(printFormat).append("\n");
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+                processedPPGData = new ArrayList<>();
+                ppgTime = new ArrayList<>();
+                annPPG = new ArrayList<>();
+            }
+
             if (ecgMode) {
                 //If data size is less than 10,cancel AsynTask by return the data
                 if (data1.size() < 10) return data1;
@@ -237,11 +273,11 @@ public class Main extends AppCompatActivity implements NavigationView.OnNavigati
                 ArrayList<Double> processedTime = calQT.getUsedTime();
                 List<Integer> annECG = calQT.getAnnECG();
 
-                hrText = calQT.getHr();
-                rrText = calQT.getRrAvr();
-                qtText = calQT.getQtAvr();
+                hrECG = calQT.getHr();
+                rrECG = calQT.getRrAvr();
+                qtECG = calQT.getQtAvr();
 
-                if (record){
+                if (record) {
                     Log.d("Saving ECG", String.valueOf(processedTime.size()) + " | " + String.valueOf(processedData.size()) + " | " + String.valueOf(annECG.size()));
                     for (int i = 0; i < processedData.size(); i++) {
                         try {
@@ -255,38 +291,31 @@ public class Main extends AppCompatActivity implements NavigationView.OnNavigati
                 }
             }
 
-            if (ppgMode) {
-                peakPPG = new PeakPhotoplethysmogram(data2, time2);
-                annPPG = peakPPG.getAnnotation();
-                rrText = peakPPG.getRrAvr();
-                hrText = peakPPG.getHr();
-                if (record){
-                    Log.d("Saving PPG", String.valueOf(time2.size()) + " | " + String.valueOf(data2.size()) + " | " + String.valueOf(annPPG.size()));
-                    for (int i = 0; i < annPPG.size(); i++) {
-                        try {
-                            printFormat = String.format("%.4f\t%d\t%d", time2.get(i), data2.get(i), annPPG.get(i));
-                            printFormat = printFormat.replace(',', '.');
-                            fw2.append(printFormat).append("\n");
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                };
-                processedPPGData = new ArrayList<>();
-                ppgTime = new ArrayList<>();
-                annPPG = new ArrayList<>();
-            }
-
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    QT.setText(" QT: " + String.format("%.3f", qtText));
-                    RR.setText(" RR: " + String.format("%.3f", rrText));
-                    HR.setText(" HR: " + String.format("%.0f", hrText));
-                    if (hrText > 100 || hrText < 60) {
-                        HR.setTextColor(Color.RED);
-                    } else {
-                        HR.setTextColor(Color.BLACK);
+                    double hr = 0;
+                    double qt = 0;
+                    double rr = 0;
+                    if(ecg || (ecg&&ppg)) {
+                        hr = hrECG;
+                        rr = rrECG;
+                        qt = qtECG;
+                    }
+
+                    if (ppg&&!ecg){
+                        hr = hrPPG;
+                        rr = rrPPG;
+                    }
+                    if(hr != 0) {
+                        QT.setText(" QT: " + String.format("%.3f", qt));
+                        RR.setText(" RR: " + String.format("%.3f", rr));
+                        HR.setText(" HR: " + String.format("%.0f", hr));
+                        if (hr > 100 || hr < 60) {
+                            HR.setTextColor(Color.RED);
+                        } else {
+                            HR.setTextColor(Color.BLACK);
+                        }
                     }
                 }
             });
@@ -560,7 +589,7 @@ public class Main extends AppCompatActivity implements NavigationView.OnNavigati
                         fw.flush();
                         fw.close();
                         fw2.flush();
-                        fw.close();
+                        fw2.close();
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -667,11 +696,21 @@ public class Main extends AppCompatActivity implements NavigationView.OnNavigati
         if (graph2LastXValue1 >= xView) {
             graph2LastXValue1 = 0;
             ppgGraph.resetData(new DataPoint[]{new DataPoint(graph2LastXValue1, Double.parseDouble(item))});
+            if(processedPPGData.size() > 1) {
+                min_val = Collections.min(processedPPGData);
+                max_val = Collections.max(processedPPGData);
+                Log.d("Min-Max ",String.valueOf(min_val)+" | "+String.valueOf(max_val));
+            }
         } else {
             graph2LastXValue1 += 1d;
         }
         lastPPG = item;
-        ppgGraph.appendData(new DataPoint(graph2LastXValue1, Double.parseDouble(item)), autoScrollX, 500);
+        double dataplot = map(Double.parseDouble(item),min_val,max_val,100,400);
+        ppgGraph.appendData(new DataPoint(graph2LastXValue1, dataplot), autoScrollX, 500);
+    }
+
+    double map(double x, double in_min, double in_max, double out_min, double out_max) {
+        return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
     }
 
     private void graphInit() {
@@ -802,6 +841,4 @@ public class Main extends AppCompatActivity implements NavigationView.OnNavigati
         series4.setThickness(3);
         series4.setColor(Color.WHITE);
     }
-
-
 }

@@ -26,15 +26,18 @@ void setup() {
   pinMode(6,OUTPUT);
   digitalWrite(5, 0);
   digitalWrite(6, 10);
-  delay(500);
+  delay(1000);
+  digitalWrite(6,0);
 }
 
 void loop() {
   currentMicros = micros ();
   if (currentMicros - previousMicros >= PERIOD){
     previousMicros = currentMicros;
-    int next_ecg_pt = dataECG1[i+100];//analogRead(AD8232);
-    int next_ppg_pt = dataECG1[i]-100;//analogRead(pulse);
+    int next_ecg_pt = analogRead(AD8232);
+    int next_ppg_pt = analogRead(pulse);
+    //next_ppg_pt = map(next_ppg_pt,0,1023,0,512);
+    Serial.println(next_ppg_pt);
     
     if(counterLine == 2){
       counterLine = 0;
@@ -45,7 +48,7 @@ void loop() {
       outECG[counterLine] = next_ecg_pt;
       counterLine++;
     }
-    i++;
-    if(i>200) i = 0;
+    //i++;
+    //if(i>200) i = 0;
   }
 }

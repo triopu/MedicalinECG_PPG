@@ -1,5 +1,7 @@
 package medicalin.ekg.Photoplethysmogram;
 
+import android.util.Log;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,7 +38,7 @@ public class PeakPhotoplethysmogram {
             mwVal.add(mwip);
         }
 
-        cancelDelay(mwVal,25);
+        cancelDelay(mwVal,15);
 
         double thr = 0.3*getMaxValue(mwVal);
 
@@ -51,6 +53,7 @@ public class PeakPhotoplethysmogram {
 
         for(int i = 0; i < ir.size(); i++){
             ann.set(ir.get(i),1);
+            Log.d("Peak PPG ",String.valueOf(ir.get(i)));
         }
 
         double rrSum = 0.000;
@@ -66,6 +69,7 @@ public class PeakPhotoplethysmogram {
         if(rrDiv > 0){
             rrAvr = rrSum/rrDiv;
             hr = 60.000/rrAvr;
+            Log.d("HR PPG ",String.valueOf(hr));
             lastRR = rrAvr;
             lastHR = hr;
         }else{
